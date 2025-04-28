@@ -272,21 +272,27 @@ export default {
     const uploadError = ref(null)
     const barangayOptions = ref([])
 
-    onMounted(async () => {
+
+
+    const fetchedBarangays = async () => {
       try {
-        const response = await api.get('/api/barangay/barangays')
+        const response = await api.get('/barangay/barangays')
+        console.log('Barangay response:', response.data)
         barangayOptions.value = response.data.map((b) => ({
           name: b.name,
-          value: b.name, // Still showing name to user but will convert to ID later
+          value: b.id,
         }))
+
       } catch (error) {
         $q.notify({
           type: 'negative',
           message: `Failed to load barangays list: ${error.message}`,
           position: 'top',
         })
-      }
-    })
+
+    }
+  }
+    onMounted(fetchedBarangays)
 
     // Your existing file handlers remain exactly the same
     const onFileAdded = (files) => {
@@ -315,87 +321,7 @@ export default {
     }
 
     const handleSubmit = async () => {
-      // Basic validations
-      if (!firstName.value.trim()) {
-        $q.notify({ type: 'warning', message: 'First name is required' })
-        return
-      }
 
-      if (!lastName.value.trim()) {
-        $q.notify({ type: 'warning', message: 'Last name is required' })
-        return
-      }
-
-      if (!barangay.value) {
-        $q.notify({ type: 'warning', message: 'Please select your barangay' })
-        return
-      }
-
-      if (!position.value.trim()) {
-        $q.notify({ type: 'warning', message: 'Position is required' })
-        return
-      }
-
-      if (!email.value.trim()) {
-        $q.notify({ type: 'warning', message: 'Email is required' })
-        return
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
-        $q.notify({ type: 'warning', message: 'Please enter a valid email address' })
-        return
-      }
-
-      if (!username.value.trim()) {
-        $q.notify({ type: 'warning', message: 'Username is required' })
-        return
-      } else if (username.value.length < 4) {
-        $q.notify({ type: 'warning', message: 'Username must be at least 4 characters' })
-        return
-      }
-
-      if (!password.value) {
-        $q.notify({ type: 'warning', message: 'Password is required' })
-        return
-      } else if (password.value.length < 8) {
-        $q.notify({ type: 'warning', message: 'Password must be at least 8 characters' })
-        return
-      }
-
-      if (!confirmPassword.value) {
-        $q.notify({ type: 'warning', message: 'Please confirm your password' })
-        return
-      }
-
-      if (password.value !== confirmPassword.value) {
-        $q.notify({ type: 'warning', message: 'Passwords do not match' })
-        return
-      }
-
-      if (!uploadedFile.value) {
-        $q.notify({ type: 'warning', message: 'Please select a profile photo' })
-        return
-      }
-
-      // File type validation
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif']
-      if (!allowedTypes.includes(uploadedFile.value.type)) {
-        $q.notify({
-          type: 'negative',
-          message: 'Invalid file type. Only JPG, PNG or GIF are allowed',
-        })
-        return
-      }
-
-      // File size validation (2MB max)
-      const maxSize = 2 * 1024 * 1024 // 2MB in bytes
-      if (uploadedFile.value.size > maxSize) {
-        $q.notify({
-          type: 'negative',
-          message: 'File too large. Maximum size is 2MB',
-          caption: `Current size: ${(uploadedFile.value.size / 1024 / 1024).toFixed(2)}MB`,
-        })
-        return
-      }
-      isLoading.value = true
 
       try {
         // 1. First upload the photo
@@ -418,6 +344,8 @@ export default {
           password_confirmation: confirmPassword.value,
           photo: uploadResult.path, // Use the path from upload
         }
+
+        console.log('Registration data:', registrationData)
 
         const result = await authStore.register(registrationData)
         if (!result.success) {
